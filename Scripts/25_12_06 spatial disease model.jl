@@ -46,3 +46,5 @@ end
 using Plots
 plot(1:timesteps, totalInfected)
 plot!(xlabel = "time", ylabel = "% infected")
+savefig("Figures/basic spatial model.png") 
+
