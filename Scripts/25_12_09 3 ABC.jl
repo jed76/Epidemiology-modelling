@@ -17,6 +17,18 @@ actualOccupancies = occupancies[occupancies.PA .== "1",:] # site-years where pre
 extinctions = CSV.File("Data/Plantago/extinctions.csv") |> DataFrame # site-years where absent after present
 PExtinction = length(extinctions[:,1]) / length(actualOccupancies[:,1])
 
+# distanceMatrix = zeros(length(pops), length(pops))
+# for i in eachindex(pops)
+#     pop1 = pops[i]
+#     for j in eachindex(pops)
+#         pop2 = pops[j]
+#         distanceMatrix[i,j] = hypot((occupancies[occupancies.ID .== pop1, "Longitude"][1] - occupancies[occupancies.ID .== pop2, "Longitude"][1]),
+#                                     (occupancies[occupancies.ID .== pop1, "Latitude"][1] - occupancies[occupancies.ID .== pop2, "Latitude"][1]))
+#     end
+#     println(i, "out of", 4367)
+# end
+# CSV.write("Data/Plantago/distanceMatrix.csv", DataFrame(distanceMatrix, :auto))
+
 distanceMatrix = CSV.File("Data/Plantago/distanceMatrix.csv") |> DataFrame
 
 model = function(alpha)
