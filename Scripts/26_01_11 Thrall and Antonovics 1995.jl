@@ -51,21 +51,58 @@ function dispersal_probability(i)
     return exp(-(i/α)^θ) - exp(-((i+1)/α)^θ)
 end
 
-# dispersal probability matrix ---------------------
+# build kernel ------------------------------------------
 fieldSize = 10
-distanceMatrix = zeros(fieldSize,fieldSize)
-for i in 1:fieldSize
-    for j in 1:fieldSize
-        distanceMatrix[i,j] = hypot((hostCoords[i, 1] - hostCoords[j, 1]), (hostCoords[i, 2] - hostCoords[j,2]))
+kernelWidth = 2 * fieldSize - 1
+centre = fieldSize
+m = 0.05 # of seeds disperse
+
+K = zeros(kernelWidth, kernelWidth)
+for i in 1:kernelWidth
+    for j in 1:kernelWidth
+        K[i,j] = dispersal_probability(hypot(i - centre, j - centre))
     end
 end
 
-probabilityMatrix = exp.(-(distanceMatrix / alpha)) # apply element-wise!!!
+K[centre, centre] = 0
+K = m * K ./ sum(K)
+K = m * K ./ sum(K)
+sum(K) # should equal m
+K[centre, centre] = 1 - m
+sum(K) # should equal 1
 
-example = zeros(10,10)
-example[1,1] = 1
-example[1,3] = 4
-example[3,2] = 7
+# we want an array of the same dimensions as our field (10×10)
+# where each cell contains the dispersal kernel (also 10×10)
+# for its corresponding cell in the field
 
-x = vec(example)
-y = reshape(x, (10, 10))
+# cut kernel to size for a given cell
+function kernelCut(i,j,K)
+    width = Int((length(K[1,:]) + 1) / 2)
+
+    return K[(width-i+1):(2*width-i), (width-j+1):(2*width-j)]
+end
+
+# Kernel array
+KArray = Array{Any}(undef, fieldSize, fieldSize, fieldSize, fieldSize)
+for i in 1:fieldSize
+    for j in 1:fieldSize
+        KArray[i,j,:,:] = kernelCut(i,j,K)
+    end
+end
+
+
+# for i in 1:fieldSize
+#     for j in 1:fieldSize
+#         distanceMatrix[i,j] = hypot((hostCoords[i, 1] - hostCoords[j, 1]), (hostCoords[i, 2] - hostCoords[j,2]))
+#     end
+# end
+
+# probabilityMatrix = exp.(-(distanceMatrix / alpha)) # apply element-wise!!!
+
+# example = zeros(10,10)
+# example[1,1] = 1
+# example[1,3] = 4
+# example[3,2] = 7
+
+# x = vec(example)
+# y = reshape(x, (10, 10))
