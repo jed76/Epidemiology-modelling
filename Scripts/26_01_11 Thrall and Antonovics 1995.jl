@@ -1,20 +1,24 @@
 function pops((X_1,X_2,Y,N))
-    # params from paper
-    λ_1 = 2.0
-    λ_2 = 1.75
-    d = 0.5
-    β_1 = 0.658
-    β_2 = 0.202
-    γ = 0.5
+    if N == 0
+        return((0,0,0,0))
+    else
+        # params from paper
+        λ_1 = 2.0
+        λ_2 = 1.75
+        d = 0.5
+        β_1 = 0.658
+        β_2 = 0.202
+        γ = 0.5
 
-    b_1 = λ_1 / (γ*N + 1)
-    b_2 = λ_2 / (γ*N + 1)
-    X_1t = X_1*(b_1+(1-β_1*(Y/N)*(1-d)))      # healthy susceptible
-    X_2t = X_2*(b_2+(1-β_2*(Y/N)*(1-d)))      # healthy resistant
-    Y_t = Y*(1+β_1*(X_1/N)+β_2*(X_2/N)*(1-d)) # infected
-    N_t = X_1t + X_2t + Y_t                   # total population
+        b_1 = λ_1 / (γ*N + 1)
+        b_2 = λ_2 / (γ*N + 1)
+        X_1t = X_1*(b_1+(1-β_1*(Y/N)*(1-d)))      # healthy susceptible
+        X_2t = X_2*(b_2+(1-β_2*(Y/N)*(1-d)))      # healthy resistant
+        Y_t = Y*(1+β_1*(X_1/N)+β_2*(X_2/N)*(1-d)) # infected
+        N_t = X_1t + X_2t + Y_t                   # total population
 
-    return((X_1t, X_2t, Y_t, N_t))
+        return((X_1t, X_2t, Y_t, N_t))
+    end
 end
 
 # NB need to implement variable γ
@@ -89,6 +93,65 @@ for i in 1:fieldSize
         KArray[i,j,:,:] = kernelCut(i,j,K)
     end
 end
+
+
+# Run model
+time = 1000
+
+
+field = zeros(fieldSize, fieldSize, time, 3)
+field[1,1,1,1] = 75
+field[1,1,1,2] = 75
+field[1,1,1,3] = 50
+dispersalX1 = zeros(fieldSize, fieldSize, fieldSize, fieldSize)
+dispersalX2 = zeros(fieldSize, fieldSize, fieldSize, fieldSize)
+dispersalY = zeros(fieldSize, fieldSize, fieldSize, fieldSize)
+
+for t in 1:time
+    for i in 1:fieldSize
+        for j in 1:fieldSize
+            # i = 1
+            # j = 1
+            # print(i, j)
+            kernel = KArray[i,j,:,:]
+            if t > 1
+                X1 = field[i,j,t-1,1]
+                X2 = field[i,j,t-1,2]
+                Y = field[i,j,t-1,3]
+            else
+                X1 = field[i,j,1,1]
+                X2 = field[i,j,1,2]
+                Y = field[i,j,1,3]
+            end
+            N = X1 + X2 + Y
+
+            popst = pops((X1, X2, Y, N))
+            X1 = popst[1]
+            X2 = popst[2]
+            Y = popst[3]
+
+            dispersalX1[i,j,:,:] = X1 * kernel
+            dispersalX2[i,j,:,:] = X2 * kernel
+            dispersalY[i,j,:,:] = Y * kernel
+        end
+    end
+    for i in 1:fieldSize
+        for j in 1:fieldSize
+            field[i,j,t,1] = sum(dispersalX1[:,:,i,j])
+            field[i,j,t,2] = sum(dispersalX2[:,:,i,j])
+            field[i,j,t,3] = sum(dispersalY[:,:,i,j])
+        end
+    end
+end
+
+using Plots
+plot(field[1,1,:,:])
+
+# TO DO:
+# add extinction
+# if population in a cell < 1, round down to 0
+
+# KArray[1,4,:,:] # kernel for [1,4]
 
 
 # for i in 1:fieldSize
